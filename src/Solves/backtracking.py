@@ -6,11 +6,11 @@ from typing import List
 def backtrack(
     network: Network,
     colors: List,
-    current_tower_idx: int = 0,
-    total_cost: float = 0.0,
-    min_cost: float = "inf",
-    min_asignments: List = [0*1000],
-    actual_asignments: List = [0*1000],
+    current_tower_idx: int,
+    total_cost: float,
+    min_cost: float,
+    min_asignments: List,
+    actual_asignments: List,
 ):
     """
     Función recursiva de backtracking para asignar frecuencias a las torres.
@@ -22,11 +22,12 @@ def backtrack(
     :param min_cost: El costo mínimo encontrado hasta el momento.
     :return: El costo mínimo encontrado después de intentar asignar frecuencias a todas las torres.
     """
-    if current_tower_idx == len(network.towers): # Ya se asignaron frecuencias a todas las torres
-        if total_cost < min_cost:
-            min_cost = total_cost
-            min_asignments = actual_asignments.copy()
+
+    if total_cost >= min_cost:
         return min_cost, min_asignments.copy()
+    
+    if current_tower_idx == len(network.towers): # Ya se asignaron frecuencias a todas las torres
+        return total_cost, actual_asignments.copy()
 
     tower = network.towers[current_tower_idx]
 
