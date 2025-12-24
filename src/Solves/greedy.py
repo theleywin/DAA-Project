@@ -3,7 +3,7 @@ from src.Network import Network
 from src.Costs.cost1 import calculate_cost
 
 
-def greedy(network: Network, colors: List) -> Tuple[float, List]:
+def greedy_solve(network: Network, colors: List) -> Tuple[float, List]:
     """
     Función que implementa un algoritmo voraz para asignar frecuencias a las torres.
     :param network: La red de torres y sus interferencias.
