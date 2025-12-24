@@ -68,6 +68,8 @@ def main():
     comp_suite.register_solver("Basic Greedy", greedy_solve)
     comp_suite.register_solver("DSATUR", dsatur_solve)
     comp_suite.register_solver("Sim. Annealing", simulated_annealing_solve)
+    from src.Solves.tabu_repair import tabu_repair_solve
+    comp_suite.register_solver("Tabu Repair", tabu_repair_solve)
     comp_suite.register_solver("Backtracking", backtracking_solve)
     
     # Run Experiments

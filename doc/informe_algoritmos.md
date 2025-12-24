@@ -88,12 +88,32 @@ Es una metaheurística probabilística inspirada en la termodinámica. Busca esc
 
 ---
 
-## Resumen Comparativo
+## 6. Tabu Search Repair (Búsqueda Tabú de Reparación)
 
-| Algoritmo | Tipo | Complejidad Tiempo | Calidad Solución | Escalabilidad | Uso Recomendado |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Greedy Básico** | Voraz | $O(V^2)$ | Baja/Media | Muy Alta | Grafos masivos, tiempo real crítico. |
-| **Welsh-Powell** | Voraz | $O(V^2)$ | Media | Alta | Mejor que Greedy sin costo extra significativo. |
-| **DSATUR** | Voraz Dinámico | $O(V^2)$ | Alta | Alta | **Opción balanceada recomendada** para mayoría de casos. |
-| **Backtracking** | Exacto | $O(K^V)$ | Óptima | Muy Baja (N<15) | Validación en grafos pequeños. |
-| **Sim. Annealing**| Metaheurística| $O(Iter)$ | Muy Alta | Media/Alta | Refinamiento cuando el tiempo lo permite y DSATUR no basta. |
+### Funcionamiento
+A diferencia de los anteriores que construyen una solución válida paso a paso, este enfoque comienza desde una solución **infactible** (asignando a cada nodo su color más barato absoluto) y trata de "reparar" los conflictos iterativamente.
+
+### Estrategia
+1.  **Inicio**: Asignar a cada nodo el color de costo mínimo absoluto, ignorando conflictos.
+2.  **Ciclo de Reparación**:
+    -   Identificar nodos en conflicto (vecinos con el mismo color).
+    -   Evaluar movimientos: Cambiar el color de un nodo en conflicto.
+    -   **Función Objetivo**: Minimizar $F = (W \times \text{Conflictos}) + \text{Costo Total}$. ($W$ es muy grande para priorizar factibilidad).
+    -   **Lista Tabú**: Evitar revertir un cambio reciente para no caer en ciclos.
+
+### Análisis de Complejidad
+-   **Tiempo**: Depende de las iteraciones. Puede ser costoso si hay muchos conflictos iniciales.
+-   **Espacio**: $O(V)$ para la lista tabú y asignaciones.
+
+---
+
+## Resumen Comparativo Final
+
+| Algoritmo | Tipo | Complejidad | Calidad Solución | Nota |
+| :--- | :--- | :--- | :--- | :--- |
+| **Greedy Básico** | Voraz | $O(V^2)$ | Baja | Muy rápido, pero miope. |
+| **Welsh-Powell** | Voraz | $O(V^2)$ | Media | Mejora ordenando nodos. |
+| **DSATUR** | Voraz Dinámico | $O(V^2)$ | **Alta** | **Mejor relación calidad/tiempo**. |
+| **Backtracking** | Exacto | $O(K^V)$ | **Óptima** | Solo para $N < 15$. |
+| **Sim. Annealing**| Metaheurística| $O(Iter)$ | Muy Alta | Robusto para escapar mínimos locales. |
+| **Tabu Repair** | Reparación | $O(Iter)$ | Variable | Útil cuando la factibilidad es difícil. |
