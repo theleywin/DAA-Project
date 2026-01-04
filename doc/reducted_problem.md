@@ -1,10 +1,10 @@
-# 
+# Minimum Cost Graph Coloring
 
 Dado:
 
 * un grafo **G** con ***n*** nodos y ***m*** aristas.
 
-*  ***k*** colores
+* un conjunto de ***k*** colores
 
 * una funcion de costo **w** (recibe un nodo v y un color c, y devuelve el costo de pintar el nodo v de color c). 
 

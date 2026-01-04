@@ -73,9 +73,43 @@ def main():
     comp_suite.register_solver("Backtracking", backtracking_solve)
     
     # Run Experiments
-    comp_suite.run_density_sweep(n_nodes=20, steps=9)
-    comp_suite.run_scalability_sweep(density=0.1, start_n=10, end_n=50, step=10)
-    comp_suite.run_high_cost_test()
+    # comp_suite.run_density_sweep(n_nodes=20, steps=9)
+    # comp_suite.run_scalability_sweep(density=0.1, start_n=10, end_n=50, step=10)
+    # comp_suite.run_high_cost_test()
+
+    # 6. Deep Empirical Analysis (New)
+    from src.Tests.empirical_analysis import EmpiricalAnalyzer
+    print("\n\n" + "="*40)
+    print("STARTING DEEP EMPIRICAL ANALYSIS")
+    print("="*40)
+    
+    # A. Convergence
+    g_conv = GraphGenerator.generate_random_graph(50, 0.4)
+    history = EmpiricalAnalyzer.run_convergence_tracker(g_conv, list(range(1, 51)), max_iter=2000)
+    
+    # B. Complexity
+    solvers_map = {
+        "Basic Greedy": greedy_solve,
+        "DSATUR": dsatur_solve,
+        "Sim. Annealing": simulated_annealing_solve
+    }
+    complexity_results = EmpiricalAnalyzer.run_complexity_profile(solvers_map, max_n=100, step=10)
+    
+    # C. Stability
+    sa_stats = EmpiricalAnalyzer.run_stability_test("Sim. Annealing", simulated_annealing_solve, g_conv, list(range(1,51)), runs=15)
+    tabu_stats = EmpiricalAnalyzer.run_stability_test("Tabu Repair", tabu_repair_solve, g_conv, list(range(1,51)), runs=15)
+
+    # 7. Visualization
+    from src.Tests.visualizer import Visualizer
+    print("\n\nGenerating Figures...")
+    Visualizer.plot_convergence_history(history, "convergence.png")
+    Visualizer.plot_complexity_profile(complexity_results, "complexity.png")
+    
+    stability_data = [
+        {"Name": "Sim. Annealing", "Mean": sa_stats['Mean'], "StdDev": sa_stats['StdDev']},
+        {"Name": "Tabu Repair", "Mean": tabu_stats['Mean'], "StdDev": tabu_stats['StdDev']}
+    ]
+    Visualizer.plot_stability_comparison(stability_data, "stability.png")
 
 if __name__ == "__main__":
     main()

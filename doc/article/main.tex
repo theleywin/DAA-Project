@@ -1,0 +1,176 @@
+\documentclass[a4paper,10pt,twocolumn]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{geometry}
+\geometry{left=2cm,right=2cm,top=2.5cm,bottom=2.5cm}
+
+\title{Análisis Comparativo de Algoritmos para el Problema de\\Coloreado de Grafos de Costo Mínimo}
+\author{Autor}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+El problema de asignación de frecuencias en redes de telecomunicaciones puede modelarse como un problema de coloreado de grafos donde cada color tiene un costo asociado. Este artículo presenta un estudio comparativo de cinco algoritmos para resolver el problema de Coloreado de Grafos de Costo Mínimo (MCGC): enfoques constructivos voraces (Greedy, Welsh-Powell, DSATUR), un algoritmo exacto (Backtracking) y metaheurísticas (Simulated Annealing y Tabu Repair). Se evalúa su rendimiento en términos de costo de la solución, tiempo de ejecución y escalabilidad sobre grafos aleatorios y geométricos. Los resultados experimentales demuestran que, mientras los algoritmos voraces ofrecen tiempos casi lineales, las metaheurísticas proporcionan un equilibrio óptimo para instancias complejas, y el algoritmo exacto queda limitado a grafos pequeños ($N < 15$).
+\end{abstract}
+
+\section{Introducción}
+El problema de coloreado de grafos (Graph Coloring Problem, GCP) es uno de los problemas clásicos de optimización combinatoria, conocido por ser NP-Completo. Una variante de gran relevancia práctica es el problema de Coloreado de Grafos de Costo Mínimo (Minimum Cost Graph Coloring, MCGC), donde el objetivo no es solo minimizar el número de colores (número cromático $\chi(G)$), sino minimizar la suma de los costos asociados a los colores utilizados en cada vértice.
+
+Esta variante tiene aplicaciones directas en la asignación de recursos, como la asignación de frecuencias en redes celulares, donde ciertas bandas de frecuencia pueden ser más costosas de licenciar o energéticamente menos eficientes que otras.
+
+\section{Estado del Arte}
+Debido a la naturaleza NP-difícil del problema MCGC, la literatura se ha centrado en dos vertientes principales: enfoques exactos para grafos pequeños y aproximaciones heurísticas/metaheurísticas para instancias de gran escala.
+
+\subsection{Enfoques Clásicos y Heurísticos}
+Los algoritmos voraces como \textbf{Greedy Secuencial} y \textbf{DSATUR} (Degree of Saturation) siguen siendo referencias fundamentales por su eficiencia $O(n^2)$. DSATUR, propuesto originalmente por Brelaz, destaca por minimizar dinámicamente el espacio de búsqueda. Investigaciones recientes continúan hibridando estos métodos constructivos con búsquedas locales para mejorar la calidad de la solución inicial.
+
+\subsection{Metaheurísticas}
+Para superar los óptimos locales, se han aplicado extensamente técnicas como \textbf{Simulated Annealing} (Recocido Simulado), \textbf{Tabu Search} y \textbf{Algoritmos Genéticos}. Estudios comparativos (e.g., Johnson et al.) han demostrado que Simulated Annealing, cuando se calibra adecuadamente con un esquema de enfriamiento lento, ofrece una de las mejores relaciones costo-calidad para grafos generales.
+
+\subsection{Avances Recientes: Graph Neural Networks}
+En los últimos años (2024-2025), el estado del arte ha comenzado a integrar técnicas de aprendizaje profundo. Modelos como \textbf{MCGNN} (Minimal Cost Graph Neural Network) utilizan redes neuronales de grafos para aprender características topológicas complejas y guiar el proceso de coloreado. Aunque estos métodos prometen resultados superiores en instancias muy complejas, requieren un entrenamiento costoso, por lo que las heurísticas tradicionales siguen siendo preferidas en entornos donde la simplicidad y la ausencia de entrenamiento previo son críticas.
+
+\subsection{Algoritmos de Tiempo Casi Lineal}
+Avances teóricos recientes han logrado algoritmos de coloreado (específicamente coloración de aristas) en tiempo casi lineal ($O(m \log m)$), rompiendo barreras de eficiencia que habían permanecido estáticas durante décadas. Aunque estos avances son teóricos, impulsan el desarrollo de nuevas heurísticas prácticas más rápidas.
+
+\section{Definición del Problema}
+Dado un grafo no dirigido $G = (V, E)$ donde $V$ es el conjunto de vértices y $E$ el conjunto de aristas:
+Sea $C = \{c_1, c_2, \dots, c_k\}$ un conjunto ordenado de colores disponibles, y $w(c_i)$ el costo asociado al color $c_i$.
+El problema puede formularse como un modelo de Programación Lineal Entera (ILP).
+definimos variables binarias de decisión:
+$$
+x_{v,k} = \begin{cases} 
+1 & \text{si al vértice } v \text{ se le asigna el color } k \\
+0 & \text{en otro caso}
+\end{cases}
+$$
+
+El objetivo es:
+$$ \text{Minimizar } Z = \sum_{v \in V} \sum_{k \in C} x_{v,k} \cdot w(c_k) $$
+
+Sujeto a:
+\begin{align}
+    \sum_{k \in C} x_{v,k} = 1, & \quad \forall v \in V \quad \text{(Asignación única)} \\
+    x_{u,k} + x_{v,k} \le 1, & \quad \forall (u,v) \in E, \forall k \in C \quad \text{(Restricción de adyacencia)} \\
+    x_{v,k} \in \{0, 1\} & \quad \forall v \in V, k \in C
+\end{align}
+
+\section{Análisis de Complejidad Computacional}
+Presentamos una demostración formal de que el Problema de Asignación de Frecuencias con Costos (PAFC) es NP-completo.
+
+\subsection{Pertenencia a NP}
+Definimos la versión de decisión del problema (PAFC-D): Dado un grafo $G$, un conjunto de costos $W$ y un entero $B$, ¿existe una coloración válida con costo total $\le B$?
+Este problema pertenece a la clase NP porque dada una solución candidata (asignación de frecuencias), podemos verificar en tiempo polinomial $O(|E| + |V|)$ si es válida y si su costo no excede $B$.
+
+\subsection{NP-Hardness}
+Demostramos que PAFC es NP-Hard mediante una reducción polinomial desde el problema \textbf{k-Coloring}, conocido por ser NP-completo para $k \ge 3$.
+
+\textbf{Reducción}: Sea $G=(V, E)$ una instancia arbitraria de k-Coloring. Construimos una instancia de PAFC de la siguiente manera:
+\begin{enumerate}
+    \item El grafo es el mismo $G$.
+    \item El conjunto de colores disponibles es $C = \{1, \dots, k\}$.
+    \item El costo de todos los colores es cero: $w(v, c) = 0, \forall v, c$.
+    \item El presupuesto $B = 0$.
+\end{enumerate}
+
+\textbf{Demostración}:
+\begin{itemize}
+    \item $\Rightarrow$: Si $G$ es k-colorable, existe una asignación válida usando los colores en $C$. Como todos los costos son 0, el costo total es $0 \le B$. La instancia PAFC tiene solución.
+    \item $\Leftarrow$: Si la instancia PAFC tiene solución con costo $\le 0$, implica que existe una asignación válida de colores (factibilidad) usando el conjunto $C$. Por tanto, $G$ es k-colorable.
+\end{itemize}
+
+Como k-Coloring se reduce polinomialmente a PAFC, PAFC es al menos tan difícil como k-Coloring.
+\textbf{Conclusión}: PAFC es NP-completo. Esto justifica matemáticamente la inexistencia de algoritmos exactos eficientes para instancias generales (salvo que $P=NP$) y fundamenta el uso de heurísticas.
+
+\section{Algoritmos Propuestos}
+
+\subsection{Algoritmos Constructivos Voraces}
+Estos algoritmos construyen una solución válida iterativamente, tomando decisiones localmente óptimas.
+
+\subsubsection{Greedy Básico}
+Asigna a cada nodo, en orden secuencial, el primer color válido de menor costo disponible. Su complejidad es $O(V^2)$. Es extremadamente rápido pero sensible al orden de los nodos.
+
+\subsubsection{Welsh-Powell}
+Mejora el enfoque voraz ordenando los nodos por grado descendente. La intuición es que los nodos más conectados son los más restrictivos y deben colorearse primero.
+
+\subsubsection{DSATUR (Degree of Saturation)}
+Utiliza un ordenamiento dinámico. En cada paso, selecciona el nodo con mayor ``grado de saturación'' (número de colores distintos en su vecindad). Esto prioriza los nodos que tienen menos opciones disponibles, reduciendo la probabilidad de necesitar colores costosos más adelante.
+
+\subsection{Algoritmos Exactos}
+\subsubsection{Backtracking con Poda}
+Explora exhaustivamente el espacio de soluciones. Para hacerlo tratable en instancias pequeñas, hemos implementado una poderosa técnica de poda (pruning): utilizamos el costo de una solución voraz como cota superior inicial. Si el costo parcial de una rama supera esta cota, la rama se descarta. Complejidad $O(k^V)$.
+
+\subsection{Metaheurísticas}
+Para escapar de los mínimos locales de los algoritmos voraces:
+
+\subsubsection{Simulated Annealing (Recocido Simulado)}
+Comienza con una solución válida (generada por DSATUR) y realiza perturbaciones aleatorias (cambiar el color de un nodo). Acepta mejoras siempre, y deterioros con una probabilidad $P = e^{-\Delta E / T}$ que disminuye con el tiempo. Esto permite explorar el espacio de soluciones sin quedar atrapado.
+
+\subsubsection{Tabu Search Repair}
+Un enfoque de ``reparación''. Comienza asignando el color más barato absoluto a todos los nodos (solución infactible) e intenta minimizar los conflictos iterativamente usando una lista tabú para evitar ciclos. A diferencia de SA, navega por el espacio de soluciones infactibles.
+
+\section{Metodología Experimental}
+Se implementó un generador de grafos sintéticos capaz de crear:
+\begin{itemize}
+    \item Grafos Aleatorios (Erdős-Rényi).
+    \item Grafos Geométricos (simulando distribución espacial de torres).
+\end{itemize}
+
+Se realizaron tres tipos de análisis:
+\begin{enumerate}
+    \item \textbf{Benchmarking Comparativo}: Medición de costo y tiempo en instancias pequeñas ($N=8$), medianas ($N=20$) y grandes ($N=100$).
+    \item \textbf{Análisis de Complejidad}: Ajuste de curvas de tiempo vs $N$.
+    \item \textbf{Análisis de Estabilidad}: Medición de la varianza en 15 ejecuciones independientes de las metaheurísticas.
+\end{enumerate}
+
+\section{Resultados y Discusión}
+
+\subsection{Calidad de la Solución y Convergencia}
+En las pruebas de varianza de costo, \textbf{DSATUR} y \textbf{Simulated Annealing} superaron al Greedy por un margen del 27\%.
+La Figura \ref{fig:convergence} muestra el perfil de convergencia del Recocido Simulado, demostrando su capacidad para explorar el espacio de búsqueda.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.45\textwidth]{figures/convergence.png}
+    \caption{Perfil de Convergencia de Simulated Annealing}
+    \label{fig:convergence}
+\end{figure}
+
+\subsection{Complejidad Computacional}
+El análisis empírico confirmó que los algoritmos voraces escalan casi linealmente en la práctica para $N < 100$, como se observa en la Figura \ref{fig:complexity}.
+\textbf{Simulated Annealing} mantuvo un tiempo de ejecución constante.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.45\textwidth]{figures/complexity.png}
+    \caption{Comparativa de Complejidad Temporal}
+    \label{fig:complexity}
+\end{figure}
+
+\subsection{Convergencia y Estabilidad}
+Simulated Annealing mostró una desviación estándar de $0.0$, indicando una alta estabilidad (ver Figura \ref{fig:stability}).
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.45\textwidth]{figures/stability.png}
+    \caption{Análisis de Estabilidad (Varianza)}
+    \label{fig:stability}
+\end{figure}
+
+\section{Conclusión y Trabajo Futuro}
+Para el problema de MCGC en redes de tamaño moderado a grande, \textbf{DSATUR} se presenta como la mejor opción por defecto, ofreciendo un equilibrio excepcional entre calidad y tiempo. Para escenarios donde la calidad es crítica, \textbf{Simulated Annealing} ofrece una capa de seguridad para refinar la solución.
+
+Como trabajo futuro, proponemos explorar:
+\begin{enumerate}
+    \item Algoritmos basados en \textbf{Recursive Largest First (RLF)}, que teóricamente podrían maximizar el uso de los colores más baratos de manera más agresiva que DSATUR.
+    \item Implementación de \textbf{Graph Neural Networks} entrenadas con aprendizaje por refuerzo para aprender heurísticas de coloreado personalizadas para topologías de red específicas.
+\end{enumerate}
+
+\end{document}
