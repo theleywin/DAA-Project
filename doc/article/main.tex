@@ -21,7 +21,7 @@ El problema de asignación de frecuencias en redes de telecomunicaciones puede m
 \end{abstract}
 
 \section{Introducción}
-El problema de coloreado de grafos (Graph Coloring Problem, GCP) es uno de los problemas clásicos de optimización combinatoria, conocido por ser NP-Completo. Una variante de gran relevancia práctica es el problema de Coloreado de Grafos de Costo Mínimo (Minimum Cost Graph Coloring, MCGC), donde el objetivo no es solo minimizar el número de colores (número cromático $\chi(G)$), sino minimizar la suma de los costos asociados a los colores utilizados en cada vértice.
+El problema de coloreado de grafos (Graph Coloring Problem, GCP) es uno de los problemas clásicos de optimización combinatoria, conocido por ser NP-Completo \cite{karp1972reducibility, garey1979computers}. Una variante de gran relevancia práctica es el problema de Coloreado de Grafos de Costo Mínimo (Minimum Cost Graph Coloring, MCGC), donde el objetivo no es solo minimizar el número de colores (número cromático $\chi(G)$), sino minimizar la suma de los costos asociados a los colores utilizados en cada vértice.
 
 Esta variante tiene aplicaciones directas en la asignación de recursos, como la asignación de frecuencias en redes celulares, donde ciertas bandas de frecuencia pueden ser más costosas de licenciar o energéticamente menos eficientes que otras.
 
@@ -29,16 +29,16 @@ Esta variante tiene aplicaciones directas en la asignación de recursos, como la
 Debido a la naturaleza NP-difícil del problema MCGC, la literatura se ha centrado en dos vertientes principales: enfoques exactos para grafos pequeños y aproximaciones heurísticas/metaheurísticas para instancias de gran escala.
 
 \subsection{Enfoques Clásicos y Heurísticos}
-Los algoritmos voraces como \textbf{Greedy Secuencial} y \textbf{DSATUR} (Degree of Saturation) siguen siendo referencias fundamentales por su eficiencia $O(n^2)$. DSATUR, propuesto originalmente por Brelaz, destaca por minimizar dinámicamente el espacio de búsqueda. Investigaciones recientes continúan hibridando estos métodos constructivos con búsquedas locales para mejorar la calidad de la solución inicial.
+Los algoritmos voraces como \textbf{Greedy Secuencial} y \textbf{DSATUR} (Degree of Saturation) siguen siendo referencias fundamentales por su eficiencia $O(n^2)$. DSATUR, propuesto originalmente por Brelaz \cite{brelaz1979new}, destaca por minimizar dinámicamente el espacio de búsqueda. Investigaciones recientes continúan hibridando estos métodos constructivos con búsquedas locales para mejorar la calidad de la solución inicial \cite{welsh1967upper}.
 
 \subsection{Metaheurísticas}
-Para superar los óptimos locales, se han aplicado extensamente técnicas como \textbf{Simulated Annealing} (Recocido Simulado), \textbf{Tabu Search} y \textbf{Algoritmos Genéticos}. Estudios comparativos (e.g., Johnson et al.) han demostrado que Simulated Annealing, cuando se calibra adecuadamente con un esquema de enfriamiento lento, ofrece una de las mejores relaciones costo-calidad para grafos generales.
+Para superar los óptimos locales, se han aplicado extensamente técnicas como \textbf{Simulated Annealing} (Recocido Simulado), \textbf{Tabu Search} y \textbf{Algoritmos Genéticos}. Estudios comparativos (e.g., Johnson et al. \cite{johnson1989optimization}) han demostrado que Simulated Annealing, cuando se calibra adecuadamente con un esquema de enfriamiento lento, ofrece una de las mejores relaciones costo-calidad para grafos generales. Hertz y de Werra \cite{hertz1987using} fueron pioneros en aplicar Tabu Search a este dominio.
 
 \subsection{Avances Recientes: Graph Neural Networks}
-En los últimos años (2024-2025), el estado del arte ha comenzado a integrar técnicas de aprendizaje profundo. Modelos como \textbf{MCGNN} (Minimal Cost Graph Neural Network) utilizan redes neuronales de grafos para aprender características topológicas complejas y guiar el proceso de coloreado. Aunque estos métodos prometen resultados superiores en instancias muy complejas, requieren un entrenamiento costoso, por lo que las heurísticas tradicionales siguen siendo preferidas en entornos donde la simplicidad y la ausencia de entrenamiento previo son críticas.
+En los últimos años (2024-2025), el estado del arte ha comenzado a integrar técnicas de aprendizaje profundo. Modelos como \textbf{MCGNN} (Minimal Cost Graph Neural Network) \cite{zhou2024mcgnn} utilizan redes neuronales de grafos para aprender características topológicas complejas y guiar el proceso de coloreado. Aunque estos métodos prometen resultados superiores en instancias muy complejas, requieren un entrenamiento costoso, por lo que las heurísticas tradicionales siguen siendo preferidas en entornos donde la simplicidad y la ausencia de entrenamiento previo son críticas.
 
 \subsection{Algoritmos de Tiempo Casi Lineal}
-Avances teóricos recientes han logrado algoritmos de coloreado (específicamente coloración de aristas) en tiempo casi lineal ($O(m \log m)$), rompiendo barreras de eficiencia que habían permanecido estáticas durante décadas. Aunque estos avances son teóricos, impulsan el desarrollo de nuevas heurísticas prácticas más rápidas.
+Avances teóricos recientes han logrado algoritmos de coloreado (específicamente coloración de aristas) en tiempo casi lineal ($O(m \log m)$) \cite{costa2024nearlinear}, rompiendo barreras de eficiencia que habían permanecido estáticas durante décadas. Aunque estos avances son teóricos, impulsan el desarrollo de nuevas heurísticas prácticas más rápidas.
 
 \section{Definición del Problema}
 Dado un grafo no dirigido $G = (V, E)$ donde $V$ es el conjunto de vértices y $E$ el conjunto de aristas:
@@ -170,7 +170,10 @@ Para el problema de MCGC en redes de tamaño moderado a grande, \textbf{DSATUR} 
 Como trabajo futuro, proponemos explorar:
 \begin{enumerate}
     \item Algoritmos basados en \textbf{Recursive Largest First (RLF)}, que teóricamente podrían maximizar el uso de los colores más baratos de manera más agresiva que DSATUR.
-    \item Implementación de \textbf{Graph Neural Networks} entrenadas con aprendizaje por refuerzo para aprender heurísticas de coloreado personalizadas para topologías de red específicas.
+    \item Implementación de \textbf{Graph Neural Networks} entrenadas con aprendizaje por refuerzo para aprender heurísticas de coloreado personalizadas para topologías de red específicas \cite{zhou2024mcgnn}.
 \end{enumerate}
+
+\bibliographystyle{plain}
+\bibliography{references}
 
 \end{document}
