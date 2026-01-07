@@ -1,5 +1,7 @@
 import time
 from typing import List, Callable, Dict, Any, Tuple
+import csv
+import os
 from src.Network import Network
 
 class BenchmarkRunner:
@@ -80,3 +82,22 @@ class BenchmarkRunner:
         for res in self.results:
             print(f"{res['Instance']:<20} | {res['Solver']:<15} | {res['Cost']:<10} | {str(res['Valid']):<6} | {res['Time(ms)']:<10}")
         print("="*80 + "\n")
+
+    def save_to_csv(self, filename: str):
+        """Saves the results to a CSV file."""
+        if not self.results:
+            print("No results to save.")
+            return
+
+        file_exists = os.path.isfile(filename)
+        keys = self.results[0].keys()
+
+        try:
+            with open(filename, 'a' if file_exists else 'w', newline='') as output_file:
+                dict_writer = csv.DictWriter(output_file, fieldnames=keys)
+                if not file_exists:
+                    dict_writer.writeheader()
+                dict_writer.writerows(self.results)
+            print(f"Results saved to {filename}")
+        except IOError as e:
+            print(f"I/O error while saving to CSV: {e}")

@@ -17,7 +17,9 @@
 \maketitle
 
 \begin{abstract}
-El problema de asignación de frecuencias en redes de telecomunicaciones puede modelarse como un problema de coloreado de grafos donde cada color tiene un costo asociado. Este artículo presenta un estudio comparativo de cinco algoritmos para resolver el problema de Coloreado de Grafos de Costo Mínimo (MCGC): enfoques constructivos voraces (Greedy, Welsh-Powell, DSATUR), un algoritmo exacto (Backtracking) y metaheurísticas (Simulated Annealing y Tabu Repair). Se evalúa su rendimiento en términos de costo de la solución, tiempo de ejecución y escalabilidad sobre grafos aleatorios y geométricos. Los resultados experimentales demuestran que, mientras los algoritmos voraces ofrecen tiempos casi lineales, las metaheurísticas proporcionan un equilibrio óptimo para instancias complejas, y el algoritmo exacto queda limitado a grafos pequeños ($N < 15$).
+    El problema de asignación de frecuencias en redes de telecomunicaciones puede modelarse como un problema de coloreado de grafos donde asignar cada color tiene un costo. 
+    Este artículo presenta un estudio comparativo de cinco algoritmos para resolver el problema de Coloreado de Grafos de Costo Mínimo (MCGC): enfoques constructivos voraces 
+    (Greedy, Welsh-Powell, DSATUR) y metaheurísticas (Simulated Annealing y Tabu Repair). Se evalúa su rendimiento en términos de costo de la solución, tiempo de ejecución y escalabilidad sobre grafos aleatorios. Los resultados experimentales demuestran que, mientras los algoritmos voraces ofrecen tiempos casi lineales, las metaheurísticas proporcionan un equilibrio óptimo para instancias complejas, y el algoritmo exacto queda limitado a grafos pequeños ($N < 15$).
 \end{abstract}
 
 \section{Introducción}
@@ -42,7 +44,9 @@ Avances teóricos recientes han logrado algoritmos de coloreado (específicament
 
 \section{Definición del Problema}
 Dado un grafo no dirigido $G = (V, E)$ donde $V$ es el conjunto de vértices y $E$ el conjunto de aristas:
-Sea $C = \{c_1, c_2, \dots, c_k\}$ un conjunto ordenado de colores disponibles, y $w(c_i)$ el costo asociado al color $c_i$.
+Sea $C = \{c_1, c_2, \dots, c_k\}$ un conjunto ordenado de colores disponibles, y $w(c_i, v)$ el costo de asociar el color $c_i$ al nodo $v$.
+ 
+
 El problema puede formularse como un modelo de Programación Lineal Entera (ILP).
 definimos variables binarias de decisión:
 $$
@@ -53,20 +57,19 @@ x_{v,k} = \begin{cases}
 $$
 
 El objetivo es:
-$$ \text{Minimizar } Z = \sum_{v \in V} \sum_{k \in C} x_{v,k} \cdot w(c_k) $$
+$$ \text{Minimizar } Z = \sum_{v \in V} \sum_{k \in C} x_{v,k} \cdot w(c_k, v) $$
 
 Sujeto a:
 \begin{align}
-    \sum_{k \in C} x_{v,k} = 1, & \quad \forall v \in V \quad \text{(Asignación única)} \\
-    x_{u,k} + x_{v,k} \le 1, & \quad \forall (u,v) \in E, \forall k \in C \quad \text{(Restricción de adyacencia)} \\
-    x_{v,k} \in \{0, 1\} & \quad \forall v \in V, k \in C
+    x_{u,k} + x_{v,k} \le 1, & \quad \forall (u,v) \in E, \forall k \in C \quad \text{(Restricción de adyacencia)}
 \end{align}
 
 \section{Análisis de Complejidad Computacional}
-Presentamos una demostración formal de que el Problema de Asignación de Frecuencias con Costos (PAFC) es NP-completo.
+Presentamos una demostración formal de que el problema de Coloreado de Grafos de Costo Mínimo (MCGC) es NP-completo.
+
 
 \subsection{Pertenencia a NP}
-Definimos la versión de decisión del problema (PAFC-D): Dado un grafo $G$, un conjunto de costos $W$ y un entero $B$, ¿existe una coloración válida con costo total $\le B$?
+Definimos la versión de decisión del problema (MCGC-D): Dado un grafo $G$, un conjunto de costos $W$ y un entero $B$, ¿existe una coloración válida con costo total $\le B$?
 Este problema pertenece a la clase NP porque dada una solución candidata (asignación de frecuencias), podemos verificar en tiempo polinomial $O(|E| + |V|)$ si es válida y si su costo no excede $B$.
 
 \subsection{NP-Hardness}

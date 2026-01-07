@@ -83,7 +83,7 @@ class EmpiricalAnalyzer:
         return history
 
     @staticmethod
-    def run_complexity_profile(solvers: Dict[str, Callable], max_n: int = 200, step: int = 20):
+    def run_complexity_profile(solvers: Dict[str, Callable], max_n: int = 200, step: int = 20, colors: List = None):
         """
         Runs solvers against N size to analyze Time Complexity.
         """
@@ -93,7 +93,8 @@ class EmpiricalAnalyzer:
         
         results = []
         sizes = range(10, max_n + 1, step)
-        colors = list(range(1, 101))
+        if colors is None:
+            colors = list(range(1, 101))
         
         for n in sizes:
             network = GraphGenerator.generate_random_graph(n, 0.3)
