@@ -1,0 +1,21 @@
+Instance                   ,Solver       ,Cost   ,Valid ,Time(ms)
+"Random(N=10, D=0.5, #1)"  ,Basic Greedy ,1350.0 ,True  ,     0.04
+"Random(N=10, D=0.5, #1)"  ,Backtracking ,1340.0 ,True  , 36593.52
+"Random(N=10, D=0.5, #2)"  ,Basic Greedy ,1340.0 ,True  ,     0.02
+"Random(N=10, D=0.5, #2)"  ,Backtracking ,1330.0 ,True  , 37165.57
+"Random(N=10, D=0.5, #3)"  ,Basic Greedy ,1380.0 ,True  ,     0.03
+"Random(N=10, D=0.5, #3)"  ,Backtracking ,1350.0 ,True  ,116174.77
+"Random(N=10, D=0.5, #4)"  ,Basic Greedy ,1400.0 ,True  ,     0.04
+"Random(N=10, D=0.5, #4)"  ,Backtracking ,1385.0 ,True  , 32983.57
+"Random(N=10, D=0.5, #5)"  ,Basic Greedy ,1375.0 ,True  ,     0.03
+"Random(N=10, D=0.5, #5)"  ,Backtracking ,1350.0 ,True  , 69297.09
+"Random(N=10, D=0.5, #6)"  ,Basic Greedy ,1400.0 ,True  ,     0.02
+"Random(N=10, D=0.5, #6)"  ,Backtracking ,1370.0 ,True  , 29940.25
+"Random(N=10, D=0.5, #7)"  ,Basic Greedy ,1385.0 ,True  ,     0.02
+"Random(N=10, D=0.5, #7)"  ,Backtracking ,1380.0 ,True  , 50220.84
+"Random(N=10, D=0.5, #8)"  ,Basic Greedy ,1420.0 ,True  ,     0.02
+"Random(N=10, D=0.5, #8)"  ,Backtracking ,1415.0 ,True  , 75984.06
+"Random(N=10, D=0.5, #9)"  ,Basic Greedy ,1480.0 ,True  ,     0.02
+"Random(N=10, D=0.5, #9)"  ,Backtracking ,1470.0 ,True  , 65715.76
+"Random(N=10, D=0.5, #10)" ,Basic Greedy ,1370.0 ,True  ,     0.02
+"Random(N=10, D=0.5, #10)" ,Backtracking ,1360.0 ,True  , 46541.42

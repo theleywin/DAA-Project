@@ -1,0 +1,455 @@
+\documentclass[a4paper,10pt,twocolumn]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{geometry}
+\geometry{left=2cm,right=2cm,top=2.5cm,bottom=2.5cm}
+\title{Análisis Comparativo de Algoritmos para el Problema de\\Coloreado de Grafos de Costo Mínimo}
+\author{
+Darío López Falcón, Diego M Viera Martínez, Pablo Gómez Vidal \\
+\small Universidad de La Habana
+}
+
+\date{Enero 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+    El problema de asignación de frecuencias en redes de telecomunicaciones puede modelarse como un problema de coloreado de grafos donde asignar cada color tiene un costo. 
+    Este artículo presenta un estudio comparativo de cinco algoritmos para resolver el problema de Coloreado de Grafos de Costo Mínimo (MCGC): enfoques constructivos voraces 
+    (Greedy, Welsh-Powell, DSATUR) y metaheurísticas (Simulated Annealing y Tabu Repair). Se evalúa su rendimiento en términos de costo de la solución, tiempo de ejecución y escalabilidad sobre grafos aleatorios. Los resultados experimentales demuestran que, mientras los algoritmos voraces ofrecen tiempos casi lineales, las metaheurísticas proporcionan un equilibrio óptimo para instancias complejas, y el algoritmo exacto queda limitado a grafos pequeños ($N < 15$).
+\end{abstract}
+
+\section{Introducción}
+El problema de coloreado de grafos (GCP) es uno de los problemas clásicos de la optimización combinatoria y la teoría de grafos. En su versión más básica, el objetivo es asignar un color a cada vértice del grafo de tal manera que dos vértices adyacentes no compartan el mismo color, utilizando la menor cantidad de colores posible (número cromático $\chi(G)$). Este problema es conocido por ser NP-Completo \cite{karp1972reducibility}, lo que implica que, a menos que P=NP, no existe un algoritmo de tiempo polinomial capaz de resolverlo de manera exacta para cualquier instancia.
+
+Una variante de gran interés práctico, y en la que se centra este artículo, es el Problema de Coloreado de Grafos de Costo Mínimo (MCGC). En el MCGC, cada color disponible tiene un costo asociado cuando se asigna a un vértice específico. El objetivo ya no es minimizar el número total de colores, sino minimizar la suma total de los costos de los colores asignados a todos los vértices del grafo, respetando las restricciones de adyacencia.
+
+Esta variante modela situaciones del mundo real con mayor fidelidad que el GCP clásico. Un ejemplo paradigmático es la asignación de frecuencias en redes de telecomunicaciones móviles. En este escenario, los vértices representan torres de transmisión y los colores representan bandas de frecuencia. Las restricciones de adyacencia evitan interferencias entre torres cercanas, pero asignar una frecuencia específica a una torre puede tener costos variables debido a licencias, consumo energético del equipamiento o características de propagación de la señal en esa ubicación.
+
+En este trabajo, exploramos y comparamos diferentes enfoques para resolver el MCGC, desde algoritmos exactos como Backtracking (limitados a instancias pequeñas) hasta heurísticas constructivas voraces y metaheurísticas avanzadas como Simulated Annealing y Tabu Repair, evaluando su eficacia en términos de calidad de la solución y tiempo de cómputo sobre grafos aleatorios.
+
+\section{Definición informal del Problema}
+A continuación se presenta la descripción del problema original sobre el cual está basado este trabajo.\\
+\paragraph{En ConectaMax Telecom, nuestra misión es proporcionar una conectividad móvil ininterrumpida y de alta calidad a millones de usuarios. Para lograrlo, operamos una extensa y compleja red de torres de telefonía celular. La eficiencia y la calidad de nuestra red dependen críticamente de cómo gestionamos uno de nuestros recursos más valiosos: el espectro de radiofrecuencias.}
+
+\paragraph{Nos enfrentamos a un desafío operativo y financiero significativo en la asignación de frecuencias a nuestras torres. Disponemos de un conjunto limitado de frecuencias que podemos utilizar. La regla fundamental, dictada por la física y la regulación, es que dos torres que están geográficamente muy cerca una de la otra (y que, por lo tanto, podrían interferir entre sí) no pueden operar en la misma frecuencia. Esto es vital para evitar la degradación de la señal y asegurar un servicio fiable.La complejidad adicional, y donde reside nuestro mayor reto, es que el costo de operar una torre con una frecuencia específica no es uniforme. Asignar una frecuencia particular a una torre determinada conlleva costos variables. Estos costos pueden deberse a múltiples factores:}
+
+\begin{enumerate}
+    \item \textbf{Equipamiento de la Torre:}  Algunas torres tienen hardware más antiguo o especializado que es más eficiente con ciertas frecuencias, mientras que otras frecuencias podrían requerir adaptaciones o un mayor consumo energético en ese mismo equipo.
+    \item \textbf{Consumo Energético:}  La eficiencia energética de la transmisión varía según la frecuencia y el tipo de equipo de la torre, impactando directamente nuestras facturas de electricidad.
+    \item \textbf{Regulaciones Locales y Licencias:} En ciertas áreas o para bandas de frecuencia específicas, pueden existir tarifas de licencia más elevadas o regulaciones que exigen configuraciones especiales, aumentando los costos operativos.
+\end{enumerate}
+
+\paragraph{Nuestro objetivo principal es asignar una frecuencia a cada una de nuestras torres de tal manera que:}
+
+\begin{enumerate}
+    \item \textbf{Se eviten todas las interferencias:} Ninguna torre cercana a otra utilice la misma frecuencia.
+    \item \textbf{Se minimice el costo operativo total:} La suma de los costos individuales de asignar cada frecuencia a cada torre sea la más baja posible.
+\end{enumerate}
+
+\paragraph{Una gestión subóptima de esta asignación no solo puede generar interferencias que afectan la calidad del servicio y la satisfacción del cliente, sino que también puede resultar en millones de dólares en costos operativos innecesarios.
+}
+
+\subsection{Reducción formal del Problema}
+
+Usando la descripción informal previamente presentada, se definió el problema como un problema de Optimización Lineal Entera:\\
+
+Dado un grafo no dirigido $\textbf{G = (V, E)}$ donde $\textbf{V}$ es el conjunto de vértices y $\textbf{E}$ el conjunto de aristas:\\
+
+Sea $\textbf{C} = \{c_1, c_2, \dots, c_k\}$ un conjunto de colores disponibles, y una función de costo $\textbf{w: C x V} \rightarrow \textbf{R}$, donde \textbf{w($c_i$, v)} representa el costo de asociarle el color $c_i$ al vértice \textbf{v}.\\
+ 
+Se definen las variables binarias de decisión:
+$$
+x_{v,k} = \begin{cases} 
+1 & \text{si al vértice } v \text{ se le asigna el color } k \\
+0 & \text{en otro caso}
+\end{cases}
+$$\\
+
+El Objetivo es:
+$$ \text{Minimizar } Z = \sum_{v \in V} \sum_{c \in C} x_{v,c} \cdot w(c, v) $$\\
+
+Sujeto a:
+\begin{align}  
+    x_{u,c} + x_{v,c} \le 1, & \quad \forall (u,v) \in E, \forall c \in C \quad
+\end{align}
+\begin{center}
+    (Restricción de adyacencia)
+\end{center}
+
+En dicha reducción cada nodo del grafo representa una torre del problema original, cada arista $\langle u, v \rangle$
+ del grafo representa que las torres u y v son cercanas, 
+cada color representa una frecuencia y la lógica tras el cálculo del costo operativo de una torre con una frecuencia asignada se encapsuló dentro de la función w, 
+además la restricción de adyacencia evita que dos torres cercanas tengan asociadas el mismo color.
+
+\section{Análisis de Complejidad Computacional}
+
+Presentamos una demostración formal de que el problema de Coloreado de Grafos de Costo Mínimo (MCGC) es NP-completo.\\
+
+Dado que este es un problema de optimización, analizamos su **versión de decisión** para estudiar su complejidad computacional.
+
+Se le llamó (MCGC-D) a la versión de decisión, y se definió de la siguiente manera:\\
+
+Dado un grafo no dirigido $\textbf{G = (V, E)}$ donde $\textbf{V}$ es el conjunto de vértices y $\textbf{E}$ el conjunto de aristas:\\
+
+Sea $\textbf{C} = \{c_1, c_2, \dots, c_k\}$ un conjunto de colores disponibles, y una función de costo $\textbf{w: C x V} \rightarrow \textbf{R}$, donde ${w(c_i, v)}$ representa el costo de asociarle el color $c_i$ al vértice \textbf{v}.\\
+ 
+Se define como coloración válida a una función $f : V \rightarrow C$ tal que $ f(u) \neq f(v)$ para toda arista $ (u, v) \in E$
+
+\textbf{Pregunta}:
+
+¿Existe una coloración válida f, tal que $\sum_{v \in V} w(v, f(v)) \le B \, ?$
+
+\subsubsection{Pertenecia a NP}
+
+Para demostrar que MCGC-D pertenece a la clase NP, basta con mostrar que una solución candidata puede ser verificada en tiempo polinomial.
+
+\textbf{Certificado}
+
+Una función de asignación $ f : V \rightarrow C$.
+
+\textbf{Verificación}
+
+\begin{enumerate}
+    \item Para cada arista $ (u, v) \in E$, verificar que $ f(u) \neq f(v)$. Esto puede hacerse en tiempo $ O(|E|)$.
+    \item Calcular el costo total $ \sum_{v \in V} w(v, f(v))$ en tiempo $ O(|V|)$.
+    \item Verificar que el costo total sea menor o igual a $B$ es $O(1)$.
+\end{enumerate}
+
+Dado que todos estos pasos se ejecutan en tiempo polinomial, concluimos que:
+
+$$\text{MCGC-D} \in \text{NP}$$
+
+\subsubsection{Pertenencia a NP-Hard}
+
+Para demostrar que MCGC-D es NP-Hard, reducimos desde el problema \textbf{k-Coloring}, conocido por ser NP-completo para todo $ k \ge 3$
+
+\textbf{Definición del problema K-Coloring :}
+
+Dado un grafo $ G = (V, E)$ y un conjunto de k colores$\textbf{C} = \{c_1, c_2, \dots, c_k\}$, determinar si existe una coloración válida de $G$ utilizando solamente colores de $C$.
+
+\textbf{Reducción}
+
+Sea una instancia arbitraria de k-Coloring dada por un grafo $ G = (V, E)$ y un conjunto $C$ de k colores.
+
+Construimos una instancia de MCGC-D de la siguiente manera:
+
+1. Utilizamos el mismo grafo $ G = (V, E)$ y el mismo conjunto de colores $ C = \{c_1, c_2, \dots, c_k\}$.
+3. Definimos la función de costo como:
+   $$   w(c, v) = 0 \quad \forall v \in V, \forall c \in C$$
+4. Definimos el presupuesto como:
+   $$B = 0$$
+
+Esta construcción puede realizarse en tiempo polinomial.
+
+\textbf{Correctitud de la Reducción}
+
+\begin{itemize}
+    \item (\textbf{Si}) 
+        Si el grafo $ G$ es k-colorable, entonces existe una coloración válida que cumple las restricciones de adyacencia.  
+        Dado que todos los costos son cero, el costo total es $ 0 \le B$, por lo que la instancia de MCGC-D responde \textbf{si}.
+
+    \item (\textbf{Solo si})  
+        Si existe una solución a la instancia de MCGC-D con costo total menor o igual a $ B = 0$, entonces necesariamente se trata de una coloración válida del grafo $ G$ con $ k$ colores, lo que implica que $ G$ es k-colorable.
+\end{itemize}
+
+Por lo tanto, la instancia de k-Coloring tiene solución si y solo si la instancia construida de MCGC-D tiene solución.
+
+\textbf{Conclusión}
+
+Dado que:
+
+\begin{itemize}
+    \item MCGC-D pertenece a NP, y
+    \item MCGC-D es NP-Hard.
+\end{itemize}
+
+concluimos que:
+
+$$\text{MCGC-D es NP-completo}$$
+
+En consecuencia, el problema original de optimización de coloración con costos es \textbf{NP-Hard} y \textbf{NP-Completo}.
+
+\section{Estado del Arte}
+Debido a la naturaleza NP-Hard del problema MCGC, la literatura se ha centrado en dos vertientes principales: 
+enfoques exactos para grafos pequeños y aproximaciones heurísticas/metaheurísticas para instancias de gran escala.
+
+\subsection{Enfoques Clásicos y Heurísticos}
+Los algoritmos voraces como \textbf{Greedy Secuencial} y \textbf{DSATUR} (Degree of Saturation) siguen siendo referencias fundamentales por su eficiencia $O(n^2)$. 
+DSATUR, propuesto originalmente por Brelaz \cite{brelaz1979new}, destaca por minimizar dinámicamente el espacio de búsqueda. Investigaciones recientes continúan 
+hibridando estos métodos constructivos con búsquedas locales para mejorar la calidad de la solución inicial \cite{welsh1967upper}.
+
+\subsection{Metaheurísticas}
+Para superar los óptimos locales, se han aplicado extensamente técnicas como \textbf{Simulated Annealing} (Recocido Simulado), \textbf{Tabu Search} y \textbf{Algoritmos Genéticos}. 
+Estudios comparativos (e.g., Johnson et al. \cite{johnson1989optimization}) han demostrado que Simulated Annealing, cuando se calibra adecuadamente con un esquema de enfriamiento 
+lento, ofrece una de las mejores relaciones costo-calidad para grafos generales. Hertz y de Werra \cite{hertz1987using} fueron pioneros en aplicar Tabu Search a este dominio.
+
+\subsection{Avances Recientes: Graph Neural Networks}
+En los últimos años (2024-2025), el estado del arte ha comenzado a integrar técnicas de aprendizaje profundo. Modelos como \textbf{MCGNN} (Minimal Cost Graph Neural Network) 
+\cite{zhou2024mcgnn} utilizan redes neuronales de grafos para aprender características topológicas complejas y guiar el proceso de coloreado. Aunque estos métodos prometen 
+resultados superiores en instancias muy complejas, requieren un entrenamiento costoso, por lo que las heurísticas tradicionales siguen siendo preferidas en entornos donde la 
+simplicidad y la ausencia de entrenamiento previo son críticas.
+
+\subsection{Algoritmos de Tiempo Casi Lineal}
+Avances teóricos recientes han logrado algoritmos de coloreado (específicamente coloración de aristas) en tiempo casi lineal ($O(m \log m)$) \cite{costa2024nearlinear}, rompiendo barreras de eficiencia que habían permanecido estáticas durante décadas. Aunque estos avances son teóricos, impulsan el desarrollo de nuevas heurísticas prácticas más rápidas.
+
+
+\section{Soluciones Propuestas}
+
+Para este trabajo se presenta la implementación de cinco algoritmos polinomiales que se emplean para la respuesta del problema de MCGC en vez de emplear algoritmos exactos como backtracking.
+
+\subsection{Greedy Básico}
+
+Es el enfoque constructivo más fundamental. Itera sobre los vértices $V$ en una secuencia predeterminada $\sigma = (v_1, v_2, \dots, v_n)$. Para cada vértice $v_i$, selecciona el color factible de menor costo.
+
+\subsubsection{Estrategia}
+\begin{enumerate}
+    \item Iterar por cada nodo $v$ en $V$.
+    \item Identificar los colores usados por los vecinos de $v$.
+    \item Asignar a $v$ el color de menor costo que no esté en uso por sus vecinos.
+\end{enumerate}
+
+\subsubsection{Formalización}
+Sea $C_{disp} \subseteq C$ el conjunto de colores disponibles (tal que $|C| \ge \Delta(G) + 1$ para asegurar factibilidad). Para un vértice $v$, definimos el conjunto de colores prohibidos por sus vecinos ya coloreados como $P(v) = \{ c(u) \mid u \in N(v) \cap \{v_1, \dots, v_{i-1}\} \}$.
+El algoritmo selecciona el color $c^*$ tal que:
+$$ c^*(v) = \arg\min_{c \in C \setminus P(v)} \{ w(c, v) \} $$
+
+\subsubsection{Argumento de Funcionamiento}
+\textbf{Correctitud:} Si el conjunto de colores $C$ es suficientemente grande ($|C| > \Delta(G)$), el conjunto $C \setminus P(v)$ nunca será vacío, garantizando siempre una asignación válida (Teorema de Brooks).
+\textbf{Heurística de Costo:} Al minimizar el término $w(c, v)$ localmente en cada paso, el algoritmo realiza una búsqueda ``Gradient Descent'' en el espacio de construcción. Aunque esta estrategia miope no garantiza el óptimo global (ya que asignar un color barato ahora podría forzar colores muy caros a vecinos futuros), es efectiva en grafos esparcidos donde las restricciones de adyacencia no se propagan densamente.
+\textbf{Limitaciones:} Su principal debilidad es la sensibilidad extrema al orden $\sigma$. Un mal orden puede forzar el uso de colores de alto costo innecesariamente.
+\subsubsection{Análisis de Complejidad}
+
+\begin{itemize}
+    \item \textbf{Tiempo}: $O(V \times D_{max} \times K)$. Para cada uno de los $V$ nodos, se inspeccionan sus vecinos (a lo sumo $D_{max}$) y se busca el mínimo en $K$ colores.
+    \item \textbf{Espacio}: $O(V + E)$ para almacenar el grafo y la asignación.
+\end{itemize}
+
+\subsection{Welsh-Powell}
+
+Es una extensión del algoritmo voraz que mitiga la sensibilidad al orden $\sigma$ mediante un preprocesamiento estático de los vértices. La intuición fundamental es que los nodos con mayor grado (más restricciones potenciales) son los más "críticos" y deben colorearse cuando el sistema tiene la máxima entropía (mayor libertad de elección).
+
+\subsubsection{Estrategia y Formalización}
+\begin{enumerate}
+    \item Calcular el grado $grad(v)$ para todo $v \in V$.
+    \item Ordenar los vértices en una secuencia $\sigma_{WP} = (v_1, \dots, v_n)$ tal que $grad(v_1) \ge grad(v_2) \ge \dots \ge grad(v_n)$.
+    \item Aplicar el procedimiento Greedy Básico sobre $\sigma_{WP}$.
+\end{enumerate}
+
+\subsubsection{Justificación Formal}
+El \textbf{Principio de "Hardest-First"} sugiere que al colorear primero los nodos de alto grado, es más probable que tengan vecinos \textit{aún no coloreados}, lo que significa que el conjunto de colores prohibidos $P(v)$ es pequeño o vacío. Esto permite asignar a los nodos más restrictivos sus colores óptimos (de menor costo). Los nodos de bajo grado, que se colorean al final, tienen más vecinos ya coloreados, pero al tener pocas aristas en total, es probable que aun existan colores baratos disponibles en su conjunto factible.
+Empíricamente, esto reduce la probabilidad de que el algoritmo se vea "acorralado" hacia colores de alto costo.
+
+\subsubsection{Análisis de Complejidad}
+\begin{itemize}
+    \item \textbf{Tiempo}: $O(V \log V + E)$. El ordenamiento domina con $V \log V$, y el coloreado toma tiempo proporcional a las aristas $E$, que en caso peor es $V^2$.
+    \item \textbf{Espacio}: $O(V + E)$. Para el grafo y la lista ordenada.
+\end{itemize}
+
+\subsection{DSATUR}
+DSATUR (Degree of Saturation) optimiza la heurística constructiva utilizando un ordenamiento \textbf{dinámico}. En lugar de una secuencia estática, el siguiente nodo a colorear se elige basándose en el estado actual de la solución parcial.
+
+\subsubsection{Definición Formal de Saturación}
+Para un vértice no coloreado $v$, definimos su \textbf{Grado de Saturación} $DSAT(v)$ como el número de colores \textit{diferentes} utilizados en su vecindad coloreada:
+$$ DSAT(v) = | \{ c(u) \mid u \in N(v) \land x_{u, \cdot} \text{ está definido} \} | $$
+Intuitivamente, $DSAT(v)$ representa una cota inferior de cuántos colores "baratos" han sido prohibidos para $v$.
+
+\subsubsection{Estrategia}
+\begin{enumerate}
+    \item \textbf{Paso Inicial:} Elegir $v$ con máximo grado estático.
+    \item \textbf{Selección:} Mientras existan vértices sin colorear:
+    \begin{itemize}
+        \item Seleccionar $v^* = \arg\max_{v \in V_{uncolored}} \{ DSAT(v) \}$.
+        \item Desempate: Usar el grado estático $grad(v)$.
+    \end{itemize}
+    \item \textbf{Asignación:} Asignar a $v^*$ el color factible de mínimo costo.
+    \item \textbf{Actualización:} Actualizar los valores $DSAT$ de los vecinos de $v^*$.
+\end{enumerate}
+
+\subsubsection{Justificación de Efectividad}
+DSATUR implementa una estrategia de \textbf{Mínimo Margen de Error}. Al seleccionar el nodo con mayor saturación, estamos eligiendo el nodo que tiene \textit{menos} colores disponibles. Posponer la decisión de este nodo aumentaría el riesgo de que sus opciones se reduzcan a cero (fallo) o solo queden opciones de costo extremo. Al atenderlo prioritariamente, maximizamos la probabilidad de encontrarle un color de costo razonable antes de que sea "demasiado tarde".
+En el contexto de MCGC, esto es crucial: evita que nodos muy conectados agoten todos los colores baratos (frecuencias bajas/eficientes) prematuramente.
+
+\subsubsection{Análisis de Complejidad}
+\begin{itemize}
+    \item \textbf{Tiempo}: $O(V^2)$ con una implementación ingenua (búsqueda lineal del máximo). Puede optimizarse a $O((V+E) \log V)$ utilizando montículos (Heaps) actualizables.
+    \item \textbf{Espacio}: $O(V+E)$ para el grafo y estructuras auxiliares.
+\end{itemize}
+
+\subsection{Simulated Annealing}
+
+Es una metaheurística probabilística inspirada en la termodinámica. Busca escapar de los "mínimos locales" (donde los algoritmos greedy se atascan) permitiendo movimientos "malos" (que aumentan el costo) temporalmente.
+
+\subsubsection{Estrategia}
+
+\begin{enumerate}
+    \item Comenzar con una solución inicial (ej. salida de DSATUR).
+    \item \textbf{Perturbación}: Elegir un nodo al azar y cambiar su color a otro válido al azar.
+    \item Calcular la diferencia de costo $\Delta E$.
+    \item \textbf{Criterio de Aceptación:} \begin{itemize}
+        \item Si $\Delta E < 0$ (mejora), aceptar siempre.
+        \item Si $\Delta E > 0$ (empeora), aceptar con probabilidad $P = e^{-\Delta E / T}$.
+    \end{itemize}
+    \item \textbf{Enfriamiento}: Reducir la temperatura $T$ gradualmente ($T = T \times \alpha$).
+\end{enumerate}
+
+\subsubsection{Análisis de Complejidad}
+
+\begin{itemize}
+    \item \textbf{Tiempo:} 
+    \begin{itemize}
+        \item Depende del número de iteraciones configurado ($Iter$).
+        \item Por iteración es muy rápido ($O(D_{max})$ para verificar validez y costo local).
+        \item Requiere comenzar con una solución factible previamente calculada $O(V^2)$ si se usa DSATOUR por ejemplo.
+        \item Total: $O(Iter \times D_{max} + V^2)$.
+    \end{itemize}
+    \item \textbf{Espacio}: $O(V)$ para mantener la solución.
+\end{itemize}
+
+\subsection{Tabu Repair}
+
+A diferencia de los anteriores que construyen una solución válida paso a paso, este enfoque comienza desde una solución \textbf{infactible en la mayoría de casos} (asignando a cada nodo su color más barato absoluto) y trata de  "reparar" los conflictos iterativamente, priorizando los nodos que presenten mas conflictos.
+
+\subsubsection{Estrategia}
+
+\begin{enumerate}
+    \item \textbf{Inicio:} Asignar a cada nodo el color de costo mínimo absoluto, ignorando conflictos.
+    \item \textbf{Ciclo de Reparación} \begin{itemize}
+        \item Identificar nodos en conflicto (vecinos con el mismo color).
+        \item Seleccionar al nodo que presenta más conflictos (En caso de empate emplear heuristicas de DSATUR o Welsh-Powell).
+        \item \textbf{Evaluar movimientos}: Cambiar el color de un nodo en conflicto.
+        \item \textbf{Función Objetivo}: Minimizar $F = (K \times \text{Conflictos}) + \text{Costo Total}$. ($K$ es muy grande para priorizar factibilidad).
+        \item \textbf{Lista Tabú}: Evitar revertir un cambio reciente para no caer en ciclos.
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Análisis de Complejidad}
+
+\begin{itemize}
+    \item \textbf{Tiempo}: El algoritmo es iterativo y no garantiza convergencia en tiempo polinomial estricto sin un límite de iteraciones ($MaxIter$).
+    \begin{itemize}
+        \item En cada iteración, identificar el nodo con máximo conflicto toma $O(V)$ inspeccionando la lista de conflictos.
+        \item Evaluar los movimientos para ese nodo implica probar hasta $K$ colores, verificando conflictos con sus vecinos, lo que toma $O(D_{max} \times K)$.
+        \item Por tanto, la complejidad es $O(MaxIter \times (V + D_{max} \times K))$. Aunque cada paso es rápido, se requieren muchas iteraciones para escapar de mínimos locales profundos.
+    \end{itemize}
+    \item \textbf{Espacio}: $O(V + E)$. Se necesita almacenar la matriz o lista de adyacencia para verificar conflictos rápidamente, el arreglo de asignaciones actuales y la lista Tabú (que suele ser de tamaño fijo o promocional a $V$).
+\end{itemize}
+
+\section{Resultados y Discusión}
+Para comparar los algoritmos, se generaron grafos sintéticos con densidad $D=0.5$ y tamaños $N=\{10, 20, 50, 100\}$, ejecutando 10 muestras para cada tamaño. Se midió el costo de la solución encontrada, la validez de la misma y el tiempo de ejecución en milisegundos.
+
+Los resultados revelan patrones claros de rendimiento:
+
+\paragraph{Instancias Pequeñas ($N=10$)}
+Como se observa en la Tabla \ref{fig:small_cases} (y datos en \texttt{benchmark\_exact.csv}), el algoritmo exacto \textbf{Backtracking} logra consistentemente los costos mínimos (ej. 1340.0 vs 1350.0 del Greedy en la muestra \#1), demostrando que las heurísticas no siempre alcanzan el óptimo global. Sin embargo, el costo temporal es prohibitivo: Backtracking tarda entre $30,000$ ms (30 segundos) y $116,000$ ms (casi 2 minutos) para un solo grafo de 10 nodos. En contraste, los algoritmos Greedy y DSATUR resuelven estas instancias en menos de $0.1$ ms. Esto confirma que los métodos exactos son inviables para cualquier aplicación de tiempo real o grafos mayores.
+
+\paragraph{Escalabilidad y Metaheurísticas ($N=20, 50, 100$)}
+Para grafos medianos y grandes, la diferencia de tiempos se magnifica.
+\begin{enumerate}
+    \item \textbf{Velocidad Extrema:} Los algoritmos constructivos (Basic Greedy, Welsh-Powell, DSATUR) mantienen tiempos de ejecución casi despreciables. Incluso para $N=100$, completan la tarea en aproximadamente $1.5$ ms (DSATUR) a $0.5$ ms (Greedy).
+    \item \textbf{Calidad de Solución:}
+    \begin{itemize}
+        \item \textbf{Simulated Annealing (SA)} y \textbf{DSATUR} suelen ofrecer los mejores costos. En las pruebas de $N=50$ y $N=100$, SA a menudo iguala o mejora ligeramente el costo de DSATUR, aunque con un tiempo de ejecución mayor (aprox. $15-20$ ms para $N=100$).
+        \item \textbf{Tabu Repair} mostró un comportamiento menos estable en las pruebas realizadas, con tiempos de ejecución significativamente más altos ($200-300$ ms para $N=100$) y costos a menudo superiores a SA o DSATUR. Esto sugiere que para el MCGC, comenzar con una solución factible y mejorarla (como hace SA) es más eficiente que reparar una infactible.
+    \end{itemize}
+\end{enumerate}
+
+En resumen, para $N=100$, un enfoque como DSATUR ofrece una solución de alta calidad en 1.5 ms, mientras que Simulated Annealing puede refinarla marginalmente invirtiendo 10 veces más tiempo (17 ms), lo cual sigue siendo muy rápido para la mayoría de las aplicaciones.
+
+Se presentan a continuación las gráficas que ilustran estas comparativas:
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.45\textwidth]{figures/small_cases.png}
+    \caption{Comparativa de resultados entre Backtracking y Greedy Básico}
+    \label{fig:small_cases}
+\end{figure}
+
+\textbf{Nota:} Solo se probó el algoritmo de backtracking con grafos de hasta 10 nodos, ya que con dicho tamaño, para cada grafo el algoritmo tardaba en promedio 1 minuto en ejecutarse.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.45\textwidth]{figures/size10_1.png}
+    \caption{Resultados de los cinco algoritmos para grafos de 10 nodos}
+    \label{fig:sise10_1}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.45\textwidth]{figures/size10_2.png}
+    \caption{Resultados de los cinco algoritmos para grafos de 10 nodos}
+    \label{fig:sise10_2}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.45\textwidth]{figures/size20_1.png}
+    \caption{Resultados de los cinco algoritmos para grafos de 20 nodos}
+    \label{fig:sise20_1}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.45\textwidth]{figures/size20_2.png}
+    \caption{Resultados de los cinco algoritmos para grafos de 20 nodos}
+    \label{fig:sise20_2}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.45\textwidth]{figures/size50_1.png}
+    \caption{Resultados de los cinco algoritmos para grafos de 50 nodos}
+    \label{fig:sise50_1}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.45\textwidth]{figures/size50_2.png}
+    \caption{Resultados de los cinco algoritmos para grafos de 50 nodos}
+    \label{fig:sise50_2}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.45\textwidth]{figures/size100_1.png}
+    \caption{Resultados de los cinco algoritmos para grafos de 100 nodos}
+    \label{fig:sise100_1}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.45\textwidth]{figures/size100_2.png}
+    \caption{Resultados de los cinco algoritmos para grafos de 100 nodos}
+    \label{fig:sise100_2}
+\end{figure}
+\newpage
+
+
+\section{Conclusión y Trabajo Futuro}
+
+El Problema de Coloreado de Grafos de Costo Mínimo presenta un desafío complejo donde el equilibrio entre tiempo de cómputo y calidad de la solución es crítico.
+Nuestros experimentos permiten concluir que:
+
+\begin{enumerate}
+    \item Para aplicaciones de \textbf{tiempo real} o en sistemas embebidos con recursos limitados, \textbf{DSATUR} es la opción superior. Su complejidad polinomial baja y su capacidad para tomar decisiones informadas sobre la marcha le permiten superar a los enfoques greedy simples sin el costo computacional de las metaheurísticas.
+    \item Cuando la calidad de la solución (minimización de costos operativos) es la prioridad absoluta y el tiempo de cálculo permite unos milisegundos extra, \textbf{Simulated Annealing} es una herramienta robusta para escapar de los óptimos locales en los que pueden caer los métodos constructivos.
+    \item Los métodos exactos como Backtracking son puramente académicos para este problema, siendo inútiles para grafos con $N > 15$ debido a su crecimiento factorial.
+\end{enumerate}
+
+Como trabajo futuro, proponemos:
+\begin{itemize}
+    \item Investigar algoritmos híbridos que utilicen DSATUR para generar la población inicial de un \textbf{Algoritmo Genético}, combinando la buena calidad inicial con la capacidad de exploración global de la evolución.
+    \item Explorar la paralelización de la evaluación de vecinos en Tabu Search para reducir su tiempo de ejecución en instancias densas.
+    \item Incorporar restricciones del mundo real más complejas, como interferencias no binarias (gradientes de señal) o costos dinámicos dependientes del tiempo, para acercar el modelo aún más a las necesidades de la industria de telecomunicaciones.
+
+\end{itemize}
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}
